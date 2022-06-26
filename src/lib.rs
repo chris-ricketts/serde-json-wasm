@@ -55,13 +55,31 @@
 #![deny(rust_2018_compatibility)]
 #![deny(rust_2018_idioms)]
 
+// We only use our own error type; no need for From conversions provided by the
+// standard library's try! macro. This reduces lines of LLVM IR by 4%.
+#[cfg(feature = "value")]
+macro_rules! tri {
+    ($e:expr $(,)?) => {
+        match $e {
+            core::result::Result::Ok(val) => val,
+            core::result::Result::Err(err) => return core::result::Result::Err(err),
+        }
+    };
+}
+
 pub mod de;
 pub mod ser;
+#[cfg(feature = "value")]
+pub mod value;
 
 #[doc(inline)]
 pub use self::de::{from_slice, from_str};
 #[doc(inline)]
 pub use self::ser::{to_string, to_vec};
+
+#[cfg(feature = "value")]
+#[doc(inline)]
+pub use self::value::{from_value, Value};
 
 #[cfg(test)]
 mod test {
